@@ -8,7 +8,10 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-type MotionMarkTest struct{}
+type MotionMarkTest struct {
+	// fps overrides MotionMark's detected target frame rate; 0 keeps the detected value.
+	fps int
+}
 
 func (t *MotionMarkTest) Name() string {
 	return "motionmark"
@@ -23,12 +26,26 @@ func (t *MotionMarkTest) Run(ctx context.Context) (*TestResult, error) {
 
 	var scoreStr, confidenceStr string
 	var subtestNames, subtestScores, subtestConfidences []string
+	var targetFPS float64
 
-	err := chromedp.Run(ctx,
+	actions := []chromedp.Action{
 		chromedp.Navigate("https://browserbench.org/MotionMark/"),
 		chromedp.WaitVisible(`#intro`),
+		// The start button is enabled once frame rate detection completes; starting
+		// earlier lets detection overwrite the options mid-run.
+		chromedp.WaitEnabled(`#start-button`, chromedp.ByID),
+	}
+	if t.fps > 0 {
+		actions = append(actions, chromedp.Evaluate(fmt.Sprintf(
+			`benchmarkController.benchmarkDefaultParameters["frame-rate"] = %d;
+			benchmarkController.benchmarkDefaultParameters["system-frame-rate"] = %d;`, t.fps, t.fps), nil))
+	}
+	actions = append(actions,
 		chromedp.Evaluate(`benchmarkController.startBenchmark()`, nil),
 		chromedp.WaitVisible(`#results`, chromedp.ByID),
+
+		// Target frame rate the run was scored against
+		chromedp.Evaluate(`benchmarkRunnerClient.results._targetFrameRate`, &targetFPS),
 
 		// Extract overall score and confidence
 		chromedp.Text(`#results .score-container .score`, &scoreStr, chromedp.NodeVisible),
@@ -39,6 +56,8 @@ func (t *MotionMarkTest) Run(ctx context.Context) (*TestResult, error) {
 		chromedp.Evaluate(`Array.from(document.querySelectorAll('#results-score td')).slice(1).map(td => td.textContent.trim())`, &subtestScores),
 		chromedp.Evaluate(`Array.from(document.querySelectorAll('#results-data td span')).slice(1).map(span => span.textContent.trim())`, &subtestConfidences),
 	)
+
+	err := chromedp.Run(ctx, actions...)
 
 	// Parse overall score
 	var score float64
@@ -66,6 +85,7 @@ func (t *MotionMarkTest) Run(ctx context.Context) (*TestResult, error) {
 
 	result.Success = true
 	result.Metrics["overall_score"] = score
+	result.Metrics["target_fps"] = targetFPS
 
 	// Add subscores to metrics
 	for key, value := range subscores {
