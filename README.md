@@ -13,7 +13,7 @@ A Chrome performance test harness for benchmarking graphics and video playback p
 
 ## Usage
 
-Download pre-built binaries from the [Releases page](https://github.com/aristosando/chromebench/releases).
+Download pre-built binaries from the [Releases page](https://github.com/jsando/chromebench/releases).
 
 ### List available tests
 ```bash
