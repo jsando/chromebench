@@ -42,6 +42,13 @@ chromebench -include "motionmark,video-1080p-h264"
 chromebench -exclude "video-4k-h264"
 ```
 
+### Override MotionMark's target frame rate
+MotionMark detects the display refresh rate and snaps it to the nearest of 15, 30, 45, 60, 90, 120 or 144fps. A display that runs just under one of those (e.g. 114.91Hz snaps to 120) misses every frame and scores near zero. Set the target explicitly:
+```bash
+chromebench -include motionmark -motionmark-fps 60
+```
+The target used is reported as the `target_fps` metric.
+
 ### Run with custom Chrome flags
 ```bash
 # Test with hardware video decode disabled

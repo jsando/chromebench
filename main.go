@@ -56,8 +56,13 @@ func main() {
 		headless       = flag.Bool("headless", false, "Run Chrome in headless mode")
 		listTests      = flag.Bool("list", false, "List available tests")
 		downloadVideos = flag.Bool("download-videos", false, "Download test videos and exit")
+		motionmarkFPS  = flag.Int("motionmark-fps", 0, "MotionMark target frame rate (0 = use MotionMark's detected rate)")
 	)
 	flag.Parse()
+
+	if *motionmarkFPS < 0 {
+		log.Fatalf("-motionmark-fps must be >= 0, got %d", *motionmarkFPS)
+	}
 
 	harness := &TestHarness{
 		headless: *headless,
@@ -74,7 +79,7 @@ func main() {
 
 	// Register all available tests
 	allTests := []Test{
-		&MotionMarkTest{},
+		&MotionMarkTest{fps: *motionmarkFPS},
 	}
 
 	// Add video tests with local paths
