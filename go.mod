@@ -1,4 +1,4 @@
-module github.com/aristosando/chromebench
+module github.com/jsando/chromebench
 
 go 1.24.5
 
